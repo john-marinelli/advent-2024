@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// It's midnight and I'm playing catch up don't judge the time complexity
+// It's midnight D:
 
 func splitRules(rules []string) [][]string {
 	var res [][]string
