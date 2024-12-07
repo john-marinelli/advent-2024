@@ -4,9 +4,17 @@ import (
 	"bufio"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
+
+func CopyReverse[T any](s []T) []T {
+	o := make([]T, len(s))
+	copy(o, s)
+	slices.Reverse(o)
+	return o
+}
 
 func ReadLines(path string) ([]string, error) {
 	var o []string
@@ -28,6 +36,16 @@ func ReadLines(path string) ([]string, error) {
 	}
 
 	return o, nil
+}
+
+func ParseCartesian(lines []string) [][]string {
+	var o [][]string
+	slices.Reverse(lines)
+	for _, l := range lines {
+		o = append(o, strings.Split(l, ""))
+	}
+
+	return o
 }
 
 func SplitNumericalLines(fLines []string) ([][]int, error) {
@@ -132,4 +150,28 @@ func SplitPage(page []string) ([]string, []string) {
 func IsIn[T comparable](ele T, m map[T]bool) bool {
 	_, ok := m[ele]
 	return ok
+}
+
+func GetRange(start int, end int) []int {
+	var o []int
+	for i := start; i < end; i++ {
+		o = append(o, i)
+	}
+
+	return o
+}
+
+func RotateMatrix[T any](in [][]T) [][]T {
+	var out [][]T
+
+	k := 0
+	for j := range in[0] {
+		out = append(out, []T{})
+		for i := len(in) - 1; i >= 0; i-- {
+			out[k] = append(out[k], in[i][j])
+		}
+		k++
+	}
+
+	return out
 }

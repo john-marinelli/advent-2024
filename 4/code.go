@@ -85,7 +85,6 @@ func partOne() {
 
 	res := 0
 
-	// TODO Find a less wordy way of doing this
 	for y := range puzzle {
 		for x := range puzzle[y] {
 			if puzzle[y][x] != "X" {
