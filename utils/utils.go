@@ -175,3 +175,12 @@ func RotateMatrix[T any](in [][]T) [][]T {
 
 	return out
 }
+
+func CopyMap[T comparable, U any](in map[T]U) map[T]U {
+	out := make(map[T]U)
+	for k := range in {
+		out[k] = in[k]
+	}
+
+	return out
+}
