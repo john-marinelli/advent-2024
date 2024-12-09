@@ -151,14 +151,6 @@ func partTwo() {
 		calcAntinodeLines(towers[towerType], maxX, maxY, res)
 	}
 
-	for r := range res {
-		city[r.Y][r.X] = "#"
-	}
-
-	for i := len(city) - 1; i >= 0; i-- {
-		fmt.Println(city[i])
-	}
-
 	fmt.Println(len(res))
 }
 
