@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 )
 
 type Block struct {
@@ -178,6 +179,8 @@ func partTwo() {
 }
 
 func main() {
-	partOne()
+	// partOne()
+	start := time.Now()
 	partTwo()
+	fmt.Printf("Ex time: %v", time.Since(start))
 }
