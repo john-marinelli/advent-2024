@@ -184,3 +184,12 @@ func CopyMap[T comparable, U any](in map[T]U) map[T]U {
 
 	return out
 }
+
+func StrToInt(s string) int {
+	r, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+
+	return r
+}
