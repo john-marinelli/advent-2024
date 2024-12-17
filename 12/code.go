@@ -5,15 +5,19 @@ import (
 	"fmt"
 )
 
+type Square struct {
+	Type  string
+	Sides []Side
+}
+
 type Point struct {
 	X int
 	Y int
 }
 
 type Plot struct {
-	Points []Point
-	Sides  []Side
-	Size   int
+	Squares []Square
+	Size    int
 }
 
 type Side struct {
@@ -21,7 +25,7 @@ type Side struct {
 	End   Point
 }
 
-func exploreGarden(exp [][]string) []Plot {
+func exploreGarden(exp [][]Square) []Plot {
 	visited := make(map[Point]bool)
 
 	plots := []Plot{}
@@ -41,28 +45,28 @@ func exploreGarden(exp [][]string) []Plot {
 				if _, ok := visited[curr]; ok {
 					continue
 				}
-				plots[len(plots)-1].Points = append(plots[len(plots)-1].Points, curr)
 				plots[len(plots)-1].Size += 1
 				visited[curr] = true
-				if curr.Y+1 < len(exp) && exp[curr.Y+1][curr.X] == square {
+				plots[len(plots)-1].Squares = append(plots[len(plots)-1].Squares, exp[curr.Y][curr.X])
+				if curr.Y+1 < len(exp) && exp[curr.Y+1][curr.X].Type == square.Type {
 					q = append(q, Point{
 						X: curr.X,
 						Y: curr.Y + 1,
 					})
 				}
-				if curr.X+1 < len(row) && exp[curr.Y][curr.X+1] == square {
+				if curr.X+1 < len(row) && exp[curr.Y][curr.X+1].Type == square.Type {
 					q = append(q, Point{
 						X: curr.X + 1,
 						Y: curr.Y,
 					})
 				}
-				if curr.X-1 >= 0 && exp[curr.Y][curr.X-1] == square {
+				if curr.X-1 >= 0 && exp[curr.Y][curr.X-1].Type == square.Type {
 					q = append(q, Point{
 						X: curr.X - 1,
 						Y: curr.Y,
 					})
 				}
-				if curr.Y-1 >= 0 && exp[curr.Y-1][curr.X] == square {
+				if curr.Y-1 >= 0 && exp[curr.Y-1][curr.X].Type == square.Type {
 					q = append(q, Point{
 						X: curr.X,
 						Y: curr.Y - 1,
@@ -70,10 +74,6 @@ func exploreGarden(exp [][]string) []Plot {
 				}
 			}
 		}
-	}
-
-	for i := range plots {
-		plots[i].Size /= 4
 	}
 
 	return plots
@@ -93,59 +93,99 @@ func addSide(p Point, sx int, sy int, ex int, ey int) Side {
 	return s
 }
 
-func searchGarden(squares []Point, dirs [][]int) map[Side]bool {
-	sSet := make(map[Side]bool)
-	pSet := make(map[Point]bool)
-
-	for _, p := range squares {
-		pSet[p] = true
+func getGardenCoordinates(grid [][]string) [][]Square {
+	o := [][]Square{}
+	for range len(grid) {
+		o = append(o, []Square{})
 	}
-
-	for _, p := range squares {
-		_, yOk := pSet[Point{X: p.X, Y: p.Y + 1}]
-		_, xOk := pSet[Point{X: p.X + 1, Y: p.Y}]
-		if !xOk || !yOk {
-			continue
+	for i, row := range grid {
+		for j, square := range row {
+			o[j] = append(o[j], Square{
+				Type: square,
+				Sides: []Side{
+					{Begin: Point{X: j, Y: i}, End: Point{X: j + 1, Y: i}},
+					{Begin: Point{X: j + 1, Y: i}, End: Point{X: j + 1, Y: i + 1}},
+					{Begin: Point{X: j + 1, Y: i + 1}, End: Point{X: j, Y: i + 1}},
+					{Begin: Point{X: j, Y: i + 1}, End: Point{X: j, Y: i}},
+				},
+			})
 		}
-		for _, dir := range dirs {
-			s := addSide(p, dir[0], dir[1], dir[2], dir[3])
-			sSet[s] = true
-		}
-	}
-
-	return sSet
-}
-
-func expandGarden(grid [][]string) [][]string {
-	o := [][]string{}
-	for range len(grid) * 2 {
-		o = append(o, []string{})
-	}
-	j := 0
-	for _, row := range grid {
-		for _, square := range row {
-			fmt.Println(square)
-			o[j] = append(o[j], square)
-			o[j] = append(o[j], square)
-			o[j+1] = append(o[j+1], square)
-			o[j+1] = append(o[j+1], square)
-		}
-		j += 2
 	}
 
 	return o
 }
 
-func calculateCost(sides map[Side]bool, area int) int {
+func calculateCost(plot Plot) int {
 	res := 0
+	sides := make(map[Side]bool)
 
-	for s := range sides {
-		if _, ok := sides[Side{Begin: s.End, End: s.Begin}]; !ok {
+	for _, s := range plot.Squares {
+		for _, side := range s.Sides {
+			sides[side] = true
+		}
+	}
+
+	for _, s := range plot.Squares {
+		for _, side := range s.Sides {
+			_, fok := sides[side]
+			_, bok := sides[Side{Begin: side.End, End: side.Begin}]
+			if fok && bok {
+				continue
+			}
 			res += 1
 		}
 	}
 
-	return area * (res + 4) / 2
+	return plot.Size * res
+}
+
+func checkExterior(a Side, set map[Side]bool) bool {
+	_, bok := set[Side{Begin: a.End, End: a.Begin}]
+	return !bok
+}
+
+func perpendicular(a Side, b Side) bool {
+	if a.Begin.X == a.End.X {
+		return a.Begin.X != b.End.X
+	}
+
+	return a.Begin.Y != b.End.Y
+}
+
+func calculateDiscounted(plot Plot) int {
+	sides := make(map[Side]bool)
+	connector := make(map[Point][]Side)
+	checked := make(map[Side]bool)
+
+	for _, s := range plot.Squares {
+		for _, side := range s.Sides {
+			sides[side] = true
+			connector[side.Begin] = append(connector[side.Begin], side)
+		}
+	}
+
+	corners := 0
+
+	for side := range sides {
+		if !checkExterior(side, sides) {
+			continue
+		}
+
+		for _, ext := range connector[side.End] {
+			if !checkExterior(ext, sides) {
+				continue
+			}
+			if perpendicular(side, ext) {
+				if _, ok := checked[ext]; ok {
+					continue
+				}
+				corners += 1
+				checked[ext] = true
+			}
+		}
+	}
+
+	return corners * plot.Size
 }
 
 func partOne() {
@@ -154,43 +194,37 @@ func partOne() {
 		panic(err)
 	}
 	grid := utils.ParseCartesian(l)
-	exp := expandGarden(grid)
+	exp := getGardenCoordinates(grid)
+	explored := exploreGarden(exp)
+	total := 0
+
+	for _, plot := range explored {
+		total += calculateCost(plot)
+	}
+
+	fmt.Println("Part one: ", total)
+
+}
+
+func partTwo() {
+	l, err := utils.ReadLines("input.txt")
+	if err != nil {
+		panic(err)
+	}
+	grid := utils.ParseCartesian(l)
+	exp := getGardenCoordinates(grid)
 	explored := exploreGarden(exp)
 
-	for i := range explored {
-		for j := range explored[i].Points {
-			fmt.Print(exp[explored[i].Points[j].Y][explored[i].Points[j].X])
-		}
-		fmt.Print(explored[i].Size)
-		fmt.Print("\n")
+	total := 0
+	for _, e := range explored {
+		total += calculateDiscounted(e)
 	}
 
-	for i := len(grid) - 1; i >= 0; i-- {
-		fmt.Println(grid[i])
-	}
-
-	fmt.Println("---------------")
-
-	for i := len(exp) - 1; i >= 0; i-- {
-		fmt.Println(exp[i])
-	}
-
-	dirs := [][]int{
-		{0, 0, 1, 0},
-		{1, 0, 1, 1},
-		{1, 1, 0, 1},
-		{0, 1, 0, 0},
-	}
-	cost := 0
-	for i := range explored {
-		currPlot := searchGarden(explored[i].Points, dirs)
-		cost += calculateCost(currPlot, explored[i].Size)
-	}
-
-	fmt.Println(cost)
+	fmt.Println("Part two: ", total)
 
 }
 
 func main() {
 	partOne()
+	partTwo()
 }

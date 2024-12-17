@@ -193,3 +193,15 @@ func StrToInt(s string) int {
 
 	return r
 }
+
+func Gcd(a int, b int) int {
+	if a == 0 {
+		return b
+	}
+
+	return Gcd(b%a, a)
+}
+
+func PyMod(a int, b int) int {
+	return (a%b + b) % b
+}
