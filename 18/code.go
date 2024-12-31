@@ -81,18 +81,23 @@ func (d *Dk) ShortestPath() {
 	}
 }
 
-func getMatrix(lines []string, width int, height int) (AdjMatrix, map[Point]bool) {
+func getMatrix(lines []string, width int, height int, numBytes int) (AdjMatrix, map[Point]bool, string) {
 	blocked := make(map[Point]bool)
 	vertices := make(map[Point]bool)
 
 	graph := make(AdjMatrix)
-	for _, line := range lines {
-		spl := strings.Split(line, ",")
+	i := 0
+	for i < numBytes {
+		spl := strings.Split(lines[i], ",")
 		blocked[Point{
 			X: utils.StrToInt(spl[0]),
 			Y: utils.StrToInt(spl[1]),
 		}] = true
+		i += 1
 	}
+
+	lastByte := lines[i-1]
+
 	for i := range height + 1 {
 		for j := range width + 1 {
 			p := Point{X: j, Y: i}
@@ -116,7 +121,7 @@ func getMatrix(lines []string, width int, height int) (AdjMatrix, map[Point]bool
 		}
 	}
 
-	return graph, vertices
+	return graph, vertices, lastByte
 }
 
 func partOne() {
@@ -124,12 +129,30 @@ func partOne() {
 	if err != nil {
 		panic(err)
 	}
-	graph, vertices := getMatrix(l, 6, 6)
+	graph, vertices, _ := getMatrix(l, 70, 70, 1024)
 	dk := NewDk(vertices, graph, Point{X: 0, Y: 0})
 	dk.ShortestPath()
 	fmt.Println(dk.Distances[Point{X: 70, Y: 70}])
 }
 
+func partTwo() {
+	l, err := utils.ReadLines("input.txt")
+	if err != nil {
+		panic(err)
+	}
+	for i := 1024; i < len(l); i++ {
+		graph, vertices, lb := getMatrix(l, 70, 70, i)
+		dk := NewDk(vertices, graph, Point{X: 0, Y: 0})
+		dk.ShortestPath()
+		if dk.Distances[Point{X: 70, Y: 70}] >= math.MaxInt {
+			fmt.Println(lb)
+			break
+		}
+	}
+
+}
+
 func main() {
-	partOne()
+	// partOne()
+	partTwo()
 }

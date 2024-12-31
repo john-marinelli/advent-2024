@@ -205,3 +205,27 @@ func Gcd(a int, b int) int {
 func PyMod(a int, b int) int {
 	return (a%b + b) % b
 }
+
+func GetPermutations[T comparable](arr []T) [][]T {
+	var heaps func(a []T, n int)
+	res := [][]T{}
+
+	heaps = func(a []T, n int) {
+		if n == 1 {
+			tmp := []T{}
+			tmp = append(tmp, a...)
+			res = append(res, tmp)
+		} else {
+			for i := range n {
+				heaps(a, n-1)
+				if n%2 != 0 {
+					a[0], a[n-1] = a[n-1], a[0]
+				} else {
+					a[i], a[n-1] = a[n-1], a[i]
+				}
+			}
+		}
+	}
+	heaps(arr, len(arr))
+	return res
+}
